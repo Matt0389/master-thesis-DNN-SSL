@@ -1,6 +1,6 @@
 #%%
 
-from src.audio_tools import frame_extract
+from src.audio_tools import frame_extract, compute_D_and_R
 
 import pandas as pd
 import numpy as np
@@ -13,15 +13,18 @@ from librosa.feature import melspectrogram
 from librosa.display import specshow
 
 data_path = "data/STARSS23/MIC/mic_dev/dev-train-tau/"
-annotation_path = "data/STARSS23/MIC/speech_frames_train_tau.csv"
+
+#annotation_path = "data/STARSS23/MIC/speech_frames_train_tau.csv"
+annotation_path = "data/STARSS23/MIC/boundary_male_speech_frames_train_tau.csv"
 
 # Import the training frame annotation file
 train_df = pd.read_csv(annotation_path)
 
-# Extract a single monophonic frame from the training data (one sample)
-sample_idx = 20
-audio, sr = frame_extract(data_path+train_df.iloc[sample_idx]["source_file"], train_df.iloc[sample_idx]["frame_number"])
+# Extract a single clip from start-stop boundaries
+sample_idx = 0
+audio, sr = frame_extract(train_df.iloc[sample_idx], train_df.iloc[sample_idx+1], audio_dir=data_path)
 
+#%%
 # Calculate STFT and plot
 window = signal.get_window("hann", 128)
 frame_stft = signal.ShortTimeFFT(window, int(len(window)/2), sr)
@@ -45,6 +48,12 @@ specshow(ps_db, x_axis='s', y_axis='log')
 
 
 # %%
+audio_length = train_df.iloc[sample_idx+1]["frame_number"] - train_df.iloc[sample_idx]["frame_number"] + 1
 
-# Audio(audio[:, 0], rate=sr)
+t_audio = np.arange(0, (audio_length)*0.1, 1/sr)
+plt.figure()
+plt.plot(t_audio, audio)
+plt.show()
 
+
+# %%
