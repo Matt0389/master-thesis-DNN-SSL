@@ -2,6 +2,7 @@
 tests
 .env
 pip-tmp
+thesis-venv
 data/STARSS23/MIC/mic_eval
 data/STARSS23/MIC/mic_dev/dev-test-sony
 data/STARSS23/MIC/mic_dev/dev-test-tau
