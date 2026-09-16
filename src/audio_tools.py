@@ -3,6 +3,7 @@ import pandas as pd
 import soundfile as sf
 import scipy.signal as signal
 from pathlib import Path
+from nara_wpe.wpe import wpe_v8
 
 # STARSS23 annotations are given at a 10 Hz frame rate -> 100 ms per frame.
 FRAME_HOP_SEC = 0.1
@@ -28,26 +29,42 @@ def frame_extract(start_row, end_row, frame_hop_sec=FRAME_HOP_SEC, audio_dir=Non
 
 
 
-def compute_D_and_R(mic_signals, fs, taps=10, delay=3, iterations=3):
+def compute_d_r_power(mic_signals, fs, win_len=512, hop=128, mfft=None,
+                       taps=10, delay=3, iterations=3):
     """
-    Function for estimating the direct and reverberrant parts of the audio file, to use as one of the input features for distance estimaation. 
     mic_signals: (num_mics, num_samples) — raw time-domain capsule signals
-    Returns: P_D, P_R — power spectra, shape (num_mics, F, T)
-    """
-    # 1. STFT each raw capsule channel
-    _, _, Y = signal.stft(mic_signals, fs=fs, nperseg=512, noverlap=384, axis=-1)
-    # Y shape: (num_mics, F, T)
+    win_len:     window length in samples -> sets frequency resolution
+    hop:         samples between frames -> sets your feature map's frame rate
+    mfft:        FFT length; None defaults to win_len (no zero-padding)
 
-    # 2. nara_wpe expects (F, D, T) — move channel axis
+    Returns
+    -------
+    P_D, P_R : ndarray, shape (num_mics, F, T) — direct/reverberant power spectra
+    SFT      : the ShortTimeFFT object (keep it — you'll want SFT.f / SFT.delta_t
+               for mel-projection and for aligning frames to your 10 Hz annotation
+               boundaries later)
+    """
+    # 1. Build the STFT transform once. sym=True matches scipy's own
+    #    ShortTimeFFT examples for analysis windows.
+    win = signal.windows.hann(win_len, sym=True)
+    SFT = signal.ShortTimeFFT(win, hop=hop, fs=fs, mfft=mfft, fft_mode='onesided')
+
+    # 2. STFT all mic channels in one call — channel axis is batched automatically
+    Y = SFT.stft(mic_signals, axis=-1)          # shape (num_mics, F, T)
+
+    # 3. nara_wpe expects (F, D, T) — move the channel axis
     Y_wpe = np.transpose(Y, (1, 0, 2))
 
-    # 3. Run WPE — this alone gives you D directly, no extra step
-    D_stft = wpe(Y_wpe, taps=taps, delay=delay, iterations=iterations)  # (F, D, T)
+    # 4. Run WPE — the output IS the direct/early estimate, no extra step
+    D_stft = wpe_v8(Y_wpe, taps=taps, delay=delay, iterations=iterations)  # (F, D, T)
 
-    # 4. Interception point: R is just the leftover, still in STFT domain
-    R_stft = Y_wpe - D_stft   # valid because STFT is linear
+    # 5. Interception point: reverberant residual, still in STFT domain
+    R_stft = Y_wpe - D_stft
 
-    # 5. Power spectra — same ε-floor as Berghi to avoid log(0) downstream
+    # 6. Back to (num_mics, F, T) and to power
+    D_stft = np.transpose(D_stft, (1, 0, 2))
+    R_stft = np.transpose(R_stft, (1, 0, 2))
     P_D = np.abs(D_stft) ** 2
     P_R = np.abs(R_stft) ** 2
-    return P_D, P_R
+
+    return P_D, P_R, SFT
