@@ -1,5 +1,5 @@
 """
-filter_monophonic_frames.py
+data_seg.py
 
 Goes through a folder of STARSS23 annotation CSVs and builds ONE combined
 CSV containing only the rows that are:
@@ -19,7 +19,7 @@ Expected input CSV format (no header row):
     frame_number, active_class_index, source_number_index, azimuth, elevation, distance
 
 Usage:
-    python filter_monophonic_frames.py /path/to/annotation_folder --classes 0 3 8 --out combined_monophonic.csv
+    python data_seg.py /path/to/annotation_folder --classes 0 3 8 --out combined_monophonic.csv
 """
 
 import argparse

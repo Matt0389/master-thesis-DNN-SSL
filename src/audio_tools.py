@@ -95,7 +95,7 @@ def stft_to_d_r_power(stft, taps=10, delay=3, iterations=3, mode='independent'):
     # 6. Back to (num_mics, F, T) and to power
     D_stft = np.transpose(D_stft, (1, 0, 2))
     R_stft = np.transpose(R_stft, (1, 0, 2))
-    P_D = np.abs(D_stft) ** 2
-    P_R = np.abs(R_stft) ** 2
+    # P_D = np.abs(D_stft) ** 2
+    # P_R = np.abs(R_stft) ** 2
 
-    return P_D, P_R
+    return D_stft, R_stft
