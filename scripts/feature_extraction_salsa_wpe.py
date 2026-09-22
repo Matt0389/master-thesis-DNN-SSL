@@ -11,6 +11,7 @@ import pandas as pd
 import numpy as np
 import scipy.signal as signal
 import matplotlib.pyplot as plt
+import librosa
 
 from nara_wpe.wpe import wpe_v8
 from nara_wpe.utils import stft, istft

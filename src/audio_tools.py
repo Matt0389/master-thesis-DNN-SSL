@@ -9,7 +9,7 @@ from nara_wpe.wpe import wpe_v8
 
  
  
-def frame_extract(sample_idx=0, annotation_df=None, data_path=None):
+def frame_extract(sample_idx=0, annotation_df=None, data_path=None, sr=24000, mono=False, dtype="float32"):
     """
     This function is for extracting an audio clip spanning start_row to end_row (inclusive).
     """
@@ -25,14 +25,13 @@ def frame_extract(sample_idx=0, annotation_df=None, data_path=None):
  
     fname = Path(audio_dir or ".") / start_row["source_file"]
     fname = fname.with_suffix(".wav")
-    sr = sf.info(fname).samplerate
  
     start_sample = int(start_row["frame_number"] * frame_hop_sec * sr)
     end_sample = int((end_row["frame_number"] + 1) * frame_hop_sec * sr)
  
-    audio, fs = sf.read(fname, start=start_sample, frames=end_sample - start_sample, always_2d=True)
+    audio, _ = sf.read(fname, start=start_sample, frames=end_sample - start_sample, always_2d=True, dtype=dtype)
 
-    return audio, fs 
+    return audio
  
 
 def audio_to_stft(mic_signals, fs, win_type='hann', win_len=512, hop=512, mfft=512):
