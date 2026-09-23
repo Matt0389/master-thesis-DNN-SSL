@@ -11,23 +11,24 @@ from nara_wpe.wpe import wpe_v8
  
 def frame_extract(sample_idx=0, annotation_df=None, data_path=None, sr=24000, mono=False, dtype="float32"):
     """
-    This function is for extracting an audio clip spanning start_row to end_row (inclusive).
+    This function is for extracting an audio clip spanning from start_row and until the number of frames specified by the df row is reached.
     """
     frame_hop_sec = 0.1
 
     # Import the training frame annotation file
 
     start_row = annotation_df.iloc[sample_idx]
-    end_row = annotation_df.iloc[sample_idx+1]
     audio_dir=data_path
-
-    assert start_row["source_file"] == end_row["source_file"], "start/end frames must be from the same file"
  
     fname = Path(audio_dir or ".") / start_row["source_file"]
     fname = fname.with_suffix(".wav")
+
+    seg_length = (start_row["frame_number"] + start_row["segment_length"]) # Length of the segment
  
     start_sample = int(start_row["frame_number"] * frame_hop_sec * sr)
-    end_sample = int((end_row["frame_number"] + 1) * frame_hop_sec * sr)
+    end_sample = int(seg_length * frame_hop_sec * sr)
+
+    print(f"Final sample idx: {seg_length}")
  
     audio, _ = sf.read(fname, start=start_sample, frames=end_sample - start_sample, always_2d=True, dtype=dtype)
 

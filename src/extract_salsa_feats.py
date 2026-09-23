@@ -143,7 +143,7 @@ def get_salsa_dlite(audio_data: np.ndarray, alpha_snr: float = 2.0, lambda_mmsc:
     - Coherence and Direct-Path Dominance: Calculated as gamma_hat * rho_hat
     
     Args:
-        wav_path (str): Filepath of the `.wav` audio file.
+        audio_data (ndarray): Array containing the audio data.
         alpha_snr (float): Alpha SNR to determine the Magitude Test.
         lambda_mmsc (float): Recursive threshold value to calculate the Mean Magnitude Squared Coherence.
         n_hopfreq (int): T_f for frequency averaging for the covariance matrix.
@@ -278,13 +278,13 @@ def get_salsa_dlite(audio_data: np.ndarray, alpha_snr: float = 2.0, lambda_mmsc:
     return full_spec
 
 
-def _get_salsa(audio_path, add_cdpd: bool = False, alpha_snr: float = 2.0, beta_coherence: float = 3.0, 
+def _get_salsa(audio_data, add_cdpd: bool = False, alpha_snr: float = 2.0, beta_coherence: float = 3.0, 
                lambda_mmsc: float = 0.8, n_hopfreq: int = 3, n_hopframes: int = 3) -> np.ndarray:
     """
     Extracts full-scale SALSA features and optionally CDPD from an audio file.
 
     Parameters:
-        audio_path (str): Filepath of the `.wav` audio file.
+        audio_data (ndarray): Array containing the audio data.
         add_cdpd (bool): Whether to include the CDPD feature.
         alpha_snr (float): Alpha SNR to determine the Magitude Test.
         beta_coherence (float): Beta_DRR that is used for SALSA EPV computation.
@@ -297,7 +297,7 @@ def _get_salsa(audio_path, add_cdpd: bool = False, alpha_snr: float = 2.0, beta_
     """
 
     # Load audio data
-    audio_data, _ = librosa.load(audio_path, sr=FS, mono=False, dtype=np.float32)
+    # audio_data, _ = librosa.load(audio_path, sr=FS, mono=False, dtype=np.float32)
 
     # Getting log-linear spectrograms
     stfts = stft_multi_channel(audio=audio_data)

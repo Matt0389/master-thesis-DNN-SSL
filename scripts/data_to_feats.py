@@ -3,14 +3,14 @@ from pathlib import Path
 sys.path.append(str(Path(__file__).resolve().parent.parent))
 
 from src.audio_tools import frame_extract
-from src.extract_salsa_feats import get_salsa_dlite
+from src.extract_salsa_feats import get_salsa_dlite, _get_salsa
 
 import librosa
 import numpy as np
 import matplotlib.pyplot as plt
 import pandas as pd
 
-FS=24000
+FS=24000 ## Change to 16000 in line with the synthetic dataset
 
 #================
 #   Main
@@ -21,11 +21,11 @@ if __name__ == "__main__":
     # ============== extract target segment =====================
 
     data_path = "data/STARSS23/MIC/mic_dev/dev-train-tau/"
-    annotation_path = "data/STARSS23/MIC/boundary_male_speech_frames_train_tau.csv"
-
+    # annotation_path = "data/STARSS23/MIC/boundary_female_speech_frames_train_tau.csv"
+    annotation_path = "data/STARSS23/MIC/tau_train_female_speech_segments.csv"
     train_df = pd.read_csv(annotation_path)
 
-    segment = 0
+    segment = 4
     audio_data = frame_extract(segment, train_df, data_path=data_path, sr=FS, mono=False, dtype=np.float32).T
 
     audio_length = len(audio_data[0, :]) / FS
@@ -36,10 +36,8 @@ if __name__ == "__main__":
     #print(f"Lower Bin: {LOWER_BIN}, Upper Bin: {UPPER_BIN}, Cutoff Bin: {UPPER_BIN}, SALSA-bins: {N_SALSA_BINS}")
     # sample_audio_fp = ""
     
-    #salsalite_feat = _get_salsalite(sample_audio_fp)
     salsadlite_feat = get_salsa_dlite(audio_data)
-    #salsa_feat = _get_salsa(sample_audio_fp)
-    #salsad_feat = _get_salsa(sample_audio_fp)
+    # salsadlite_feat = _get_salsa(audio_data, add_cdpd=True)
 
     print(f"SALSA-DLite: {salsadlite_feat.shape}")
 
