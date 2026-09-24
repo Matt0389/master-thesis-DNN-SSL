@@ -99,3 +99,20 @@ def stft_to_d_r_power(stft, taps=10, delay=3, iterations=3, mode='independent'):
     # P_R = np.abs(R_stft) ** 2
 
     return D_stft, R_stft
+
+
+def sph2cart(azimuth_deg, elevation_deg, radius):
+    """
+    Convert (azimuth_deg, elevation_deg, radius) -> Cartesian (x, y, z).
+    Inverse of cart2sph below - same convention: elevation measured from
+    the horizontal plane, azimuth measured counterclockwise from +x.
+    """
+    az = np.radians(azimuth_deg)
+    el = np.radians(elevation_deg)
+
+    
+    return radius * np.array([
+        np.cos(el) * np.cos(az),
+        np.cos(el) * np.sin(az),
+        np.sin(el),
+    ])

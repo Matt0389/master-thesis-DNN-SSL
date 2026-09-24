@@ -10,7 +10,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import pandas as pd
 
-FS=24000 ## Change to 16000 in line with the synthetic dataset
+FS=16000 ## Change to 16000 in line with the synthetic dataset
 
 #================
 #   Main
@@ -20,12 +20,18 @@ if __name__ == "__main__":
 
     # ============== extract target segment =====================
 
+    ## ========== Real data ===========
     data_path = "data/STARSS23/MIC/mic_dev/dev-train-tau/"
-    # annotation_path = "data/STARSS23/MIC/boundary_female_speech_frames_train_tau.csv"
     annotation_path = "data/STARSS23/MIC/tau_train_female_speech_segments.csv"
+
+    ## ========== Synthetic data ===========
+    # data_path = "data/synthetic_starss_dataset_100_samples/mic_dev/synth_dev/"
+    # annotation_path = "data/synthetic_starss_dataset_100_samples/synth100_combinedMF_speech_segments.csv"
+
+
     train_df = pd.read_csv(annotation_path)
 
-    segment = 4
+    segment = 36 # Which clip to import
     audio_data = frame_extract(segment, train_df, data_path=data_path, sr=FS, mono=False, dtype=np.float32).T
 
     audio_length = len(audio_data[0, :]) / FS
@@ -53,7 +59,7 @@ if __name__ == "__main__":
     plt.savefig(f"LinSpec for channel {channel}.png")
 
     plt.figure()
-    plt.imshow(salsadlite_feat[channel+5].T, aspect='auto', origin='lower', interpolation='nearest')
+    plt.imshow(salsadlite_feat[channel+5, :, :].T, aspect='auto', origin='lower', interpolation='nearest')
     plt.title(f"NIPD for channels {channel} and {channel+1}")
     plt.savefig(f"channel-{channel}-{channel+1}-NIPD.png")
     

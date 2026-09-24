@@ -9,12 +9,14 @@ import librosa
 import numpy as np
 import matplotlib.pyplot as plt
 
+from src.audio_tools import sph2cart
+
 
 # ============================
 # Feature Extraction Constants for SALSA-D-LITE
 # - Yeow et Al. 2025
 # ============================
-FS = 24000
+FS = 16000
 N_FFT = 512
 HOP_LEN = 300
 
@@ -23,10 +25,10 @@ HOP_LEN = 300
 #       - how the microphone array aperture informs the highest unaliased frequency to be used for DOA
 FMIN_DOA = 50
 FMAX_DOA = 4000
-D_MAX = 0.2    # maximum mic spacing (m) ## --CHANGE BASED ON EIGENMIKE
+D_MAX = 0.0688    # maximum mic spacing (m) -- calculated in misc_calculations.ipynb
 C = 343.0       # speed of sound (m/s)
 F_ALIAS = C / (2 * D_MAX)
-FMAX_DOA = min(FMAX_DOA, FS // 2, F_ALIAS)
+FMAX_DOA = min(FS // 2, F_ALIAS)
 
 # STFT Bins
 
