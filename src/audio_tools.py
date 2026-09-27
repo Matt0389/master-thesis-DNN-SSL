@@ -7,9 +7,39 @@ from nara_wpe.wpe import wpe_v8
 
 # STARSS23 annotations are given at a 10 Hz frame rate -> 100 ms per frame.
 
+
+def sph2cart(azimuth_deg, elevation_deg, radius):
+    """
+    Convert (azimuth_deg, elevation_deg, radius) -> Cartesian (x, y, z).
+    Inverse of cart2sph below - same convention: elevation measured from
+    the horizontal plane, azimuth measured counterclockwise from +x.
+    """
+    az = np.radians(azimuth_deg)
+    el = np.radians(elevation_deg)
+
+    
+    return radius * np.array([
+        np.cos(el) * np.cos(az),
+        np.cos(el) * np.sin(az),
+        np.sin(el),
+    ])
+
+
+def load_feature_maps(fname):
+    """
+    Function for loading a feature map from a .npz file, directly used for training
+
+    """
+
+    map = np.load(fname)
+
+    return map
+
+
+
+
  
- 
-def frame_extract(sample_idx=0, annotation_df=None, data_path=None, sr=24000, mono=False, dtype="float32"):
+def frame_extract(sample_idx=0, annotation_df=None, data_path=None, sr=24000, mono=False, dtype="float32", return_length=False):
     """
     This function is for extracting an audio clip spanning from start_row and until the number of frames specified by the df row is reached.
     """
@@ -23,17 +53,20 @@ def frame_extract(sample_idx=0, annotation_df=None, data_path=None, sr=24000, mo
     fname = Path(audio_dir or ".") / start_row["source_file"]
     fname = fname.with_suffix(".wav")
 
-    seg_length = (start_row["frame_number"] + start_row["segment_length"]) # Length of the segment
+
+    seg_length = (start_row["frame_number"] + start_row["segment_length"]) # Length of the segment in frames
  
     start_sample = int(start_row["frame_number"] * frame_hop_sec * sr)
     end_sample = int(seg_length * frame_hop_sec * sr)
 
-    print(f"Final sample idx: {seg_length}")
+    # print(f"Final sample idx: {seg_length}")
  
     audio, _ = sf.read(fname, start=start_sample, frames=end_sample - start_sample, always_2d=True, dtype=dtype)
 
-    return audio
- 
+    return (audio, start_row["segment_length"]) if return_length == True else audio
+
+
+
 
 def audio_to_stft(mic_signals, fs, win_type='hann', win_len=512, hop=512, mfft=512):
     """
@@ -101,18 +134,4 @@ def stft_to_d_r_power(stft, taps=10, delay=3, iterations=3, mode='independent'):
     return D_stft, R_stft
 
 
-def sph2cart(azimuth_deg, elevation_deg, radius):
-    """
-    Convert (azimuth_deg, elevation_deg, radius) -> Cartesian (x, y, z).
-    Inverse of cart2sph below - same convention: elevation measured from
-    the horizontal plane, azimuth measured counterclockwise from +x.
-    """
-    az = np.radians(azimuth_deg)
-    el = np.radians(elevation_deg)
 
-    
-    return radius * np.array([
-        np.cos(el) * np.cos(az),
-        np.cos(el) * np.sin(az),
-        np.sin(el),
-    ])

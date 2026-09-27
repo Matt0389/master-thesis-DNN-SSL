@@ -170,11 +170,11 @@ def get_salsa_dlite(audio_data: np.ndarray, alpha_snr: float = 2.0, lambda_mmsc:
     n_bins, n_frames, n_chans = X.shape
     Y = X.T  # (Channels, Time, Freq)
 
-    print(f"Transposed X stft shape, after cutoff: {Y.shape} (Channels, Time, Freq)")
+    #print(f"Transposed X stft shape, after cutoff: {Y.shape} (Channels, Time, Freq)")
 
     # Compute average MSC (Magnitude Squared Coherence)
     gamma_avg = compute_msc_recursive(Y, lambda_=lambda_mmsc)  # (Time, Freq)
-    print(f"Gamma_avg shape = {gamma_avg.shape} (Time, Freq)")
+    #print(f"Gamma_avg shape = {gamma_avg.shape} (Time, Freq)")
 
     # Noise floor tracking parameters
     n_sig_frames = 3
@@ -188,7 +188,7 @@ def get_salsa_dlite(audio_data: np.ndarray, alpha_snr: float = 2.0, lambda_mmsc:
     # Pad X for autocorrelation computation
     X = np.pad(X, ((n_hopfreq, n_hopfreq), (n_hopframes, n_hopframes), (0, 0)), 'wrap')
 
-    print(f"Shape of padded X: {X.shape} (Frequency, Time, Channels)")
+    #print(f"Shape of padded X: {X.shape} (Frequency, Time, Channels)")
 
     # Initialize signal magnitude spectrogram
     signal_magspec = np.zeros((n_bins, n_frames))
@@ -269,9 +269,9 @@ def get_salsa_dlite(audio_data: np.ndarray, alpha_snr: float = 2.0, lambda_mmsc:
 
     # Concatenation of features
     cdpd_spec = np.expand_dims(np.sqrt(cdpd_spec), axis=0).transpose((0, 2, 1)) # Channels, Time, Frequency
-    print(f"cdpd shape {cdpd_spec.shape}")
+    #print(f"cdpd shape {cdpd_spec.shape}")
     full_spec = np.concatenate((salsalite_feat[:4], cdpd_spec, salsalite_feat[4:]), axis=0) # Channels, Time, Frequency
-    print(f"full spec shape {full_spec.shape}")
+    #print(f"full spec shape {full_spec.shape}")
 
     # Check for NaN values in the feature set
     if np.isnan(full_spec).any():
