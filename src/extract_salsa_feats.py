@@ -17,8 +17,8 @@ from src.audio_tools import sph2cart
 # - Yeow et Al. 2025
 # ============================
 FS = 16000
-N_FFT = 512
-HOP_LEN = 300
+N_FFT = 512 # 512
+HOP_LEN = 200 # 300
 
 # DOA Frequency Bounds (Check the page *** in Notion for deeper explanation)
 
