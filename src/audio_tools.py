@@ -68,22 +68,22 @@ def frame_extract(sample_idx=0, annotation_df=None, data_path=None, sr=24000, mo
 
 
 
-# def audio_to_stft(mic_signals, fs, win_type='hann', win_len=512, hop=512, mfft=512):
-#     """
-#     Function for calculating the stft from a (multichannel) audio signal.
+def audio_to_stft(mic_signals, fs, win_type='hann', win_len=512, hop=512, mfft=512):
+    """
+    Function for calculating the stft from a (multichannel) audio signal.
 
-#     This STFT is thus both used for the SALSA-Lite feature as well as the estimation of the direct and reverberrant parts of each capsule input.  
+    This STFT is thus both used for the SALSA-Lite feature as well as the estimation of the direct and reverberrant parts of each capsule input.  
 
 
-#     """
+    """
 
-#     win = signal.get_window(win_type, win_len)
-#     SFT = signal.ShortTimeFFT(win, hop=hop, fs=fs, mfft=mfft, fft_mode='onesided')
+    win = signal.get_window(win_type, win_len)
+    SFT = signal.ShortTimeFFT(win, hop=hop, fs=fs, mfft=mfft, fft_mode='onesided')
 
-#     # STFT all mic channels in one call
-#     Y = SFT.stft(mic_signals, axis=-1) # shape (num_mics, F, T)
+    # STFT all mic channels in one call
+    Y = SFT.stft(mic_signals, axis=-1) # shape (num_mics, F, T)
 
-#     return Y, SFT
+    return Y, SFT
 
 
 
