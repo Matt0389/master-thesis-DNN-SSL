@@ -8,6 +8,7 @@ import numpy as np
 import sys
 import glob
 import librosa
+import pandas as pd
 import random
 sys.path.insert(0, "../SpatialScaper/scripts")
 
@@ -94,44 +95,28 @@ RIR_DIR = "../data/synth/rir_datasets"
 FORMAT = "mic"
 SR = 16000
 OUTPUT_DIR = "../data/synth/output"
-TARGET_DURATION = [16.0, 20.0]  # Keep all clips at either of these lengths, with padding
-PADDING_SEC = 0.5
 
 def get_utterance_files(foreground_dir):
     """Every source audio file across all class subfolders (femaleSpeech/, maleSpeech/)."""
     return sorted(glob.glob(os.path.join(foreground_dir, "*", "*.flac")))
 
-# def choose_duration_and_padding(utterance_duration):
-#     """
-#     Decide which fixed clip length this utterance should go into, and how
-#     much silence to put on each side to center it.
-#     """
-#     if utterance_duration < 10.0:
 
-#         return 
-    
-#     if utterance_duration > TARGET_DURATION[0]:
+LEAD_SEC = 1            # silence before the first event
+GAP_RANGE = (0.3, 3.0)     # silence between the two events (s).
+PADDING_SEC = 2
 
-#         total_padding = TARGET_DURATION[1] - utterance_duration
-
-#         return (TARGET_DURATION[1], total_padding / 2)
-
-#     else:
-
-#         total_padding = TARGET_DURATION[0] - utterance_duration
-
-#         return (TARGET_DURATION[0], total_padding / 2)
-
-
-
-def generate_soundscape(index, source_file, rm):
+def generate_soundscape(index, source_files, rm):
 
     track_name = f"fold1_{rm}_mix{index+1:03d}"
-    label = os.path.basename(os.path.dirname(source_file))  # "femaleSpeech" / "maleSpeech"
-    duration = librosa.get_duration(path=source_file) + PADDING_SEC
-    # duration = 18.0 # Truncating to even 16 seconds - useful for further segmentation
-    # utterance_duration = librosa.get_duration(path=source_file)
-    # duration, pad = choose_duration_and_padding(utterance_duration)
+    src1, src2 = source_files
+
+    d1 = librosa.get_duration(path=src1)
+    d2 = librosa.get_duration(path=src2)
+
+    gap = random.Random(index).uniform(*GAP_RANGE)   # reproducible per clip, independent of worker
+    t1 = LEAD_SEC
+    t2 = LEAD_SEC + d1 + gap
+    duration = d1 + d2 + gap + PADDING_SEC  
 
     ssc = ss.Scaper(
         duration,
@@ -142,19 +127,20 @@ def generate_soundscape(index, source_file, rm):
         sr=SR,
         use_room_ambient_noise=True,    # Create background noise according to room ambience
         max_event_dur=duration,          # >= full utterance length - never truncated
-        speed_limit=0.2,                # m/s - small head-jitter-scale movement, not room-traversing motion
+        speed_limit=1.5,                # m/s - small head-jitter-scale movement, not room-traversing motion
     )
     ssc.ref_db = -65
 
     ssc.add_background()
 
-    ssc.add_event(
-        label=("const", label),
-        source_file=("const", source_file),
-        source_time=("const", 0),
-        event_time=("const", 0.3),       # add silence padding
-        snr=("uniform", 6, 20),
-    )
+    for src, t in ((src1, t1), (src2, t2)):
+        ssc.add_event(
+            label=("const", os.path.basename(os.path.dirname(src))),
+            source_file=("const", src),
+            source_time=("const", 0),
+            event_time=("const", t),       # add silence padding
+            snr=("uniform", 6, 20),
+        )
 
     audiofile = os.path.join(OUTPUT_DIR, FORMAT, track_name)
     labelfile = os.path.join(OUTPUT_DIR, "labels", track_name)
@@ -167,6 +153,44 @@ random.seed(43)
 random.shuffle(utterance_files)
 
 
+# def generate_soundscape(index, source_file, rm):
+
+#     track_name = f"fold1_{rm}_mix{index+1:03d}"
+#     label = os.path.basename(os.path.dirname(source_file))  # "femaleSpeech" / "maleSpeech"
+#     duration = librosa.get_duration(path=source_file) + PADDING_SEC
+
+#     ssc = ss.Scaper(
+#         duration,
+#         FOREGROUND_DIR,
+#         RIR_DIR,
+#         FORMAT,
+#         room=rm,
+#         sr=SR,
+#         use_room_ambient_noise=True,    # Create background noise according to room ambience
+#         max_event_dur=duration,          # >= full utterance length - never truncated
+#         speed_limit=1.5,                # m/s - small head-jitter-scale movement, not room-traversing motion
+#     )
+#     ssc.ref_db = -65
+
+#     ssc.add_background()
+
+#     ssc.add_event(
+#         label=("const", label),
+#         source_file=("const", source_file),
+#         source_time=("const", 0),
+#         event_time=("const", 0.3),       # add silence padding
+#         snr=("uniform", 6, 20),
+#     )
+
+#     audiofile = os.path.join(OUTPUT_DIR, FORMAT, track_name)
+#     labelfile = os.path.join(OUTPUT_DIR, "labels", track_name)
+#     ssc.generate(audiofile, labelfile)
+
+# utterance_files = get_utterance_files(FOREGROUND_DIR)
+# rooms = ["metu", "bomb_shelter", "gym", "pb132", "pc226", "sa203", "sc203", "se203", "tb103", "tc352"]
+
+# random.seed(43)
+# random.shuffle(utterance_files)
 
 
 
@@ -249,10 +273,19 @@ ss.core.Scaper.get_room_irs_wav_xyz = _patched_get_room_irs # Make sure the cach
 
 by_room = defaultdict(list)
 
-recs_per_room = 5
 
-for i, f in enumerate(utterance_files):
-    by_room[rooms[i // recs_per_room % len(rooms)]].append((i, f))   # spread files across rooms, grouped
+
+
+# =============== Generation ==============
+
+recs_per_room = 3 # 180 recs per room = 30 minutes per room, for 10 rooms = 300 minutes total
+n_clips = recs_per_room * len(rooms)
+
+# Pairs of sound files per generation now
+sf_pairs = list(zip(utterance_files[0::2], utterance_files[1::2]))[:n_clips]
+
+for i, pair in enumerate(sf_pairs):
+    by_room[rooms[i // recs_per_room % len(rooms)]].append((i, pair))   # spread clips across rooms, grouped
 
 
 def _run_room_batch(args):
@@ -262,17 +295,37 @@ def _run_room_batch(args):
     
     room, items = args
 
-    for i, source_file in items:
+    for i, source_files in items:
         
         if i >= recs_per_room * len(rooms):
             break
 
-        generate_soundscape(i, source_file, room)
+        generate_soundscape(i, source_files, room)
 
 
 with ProcessPoolExecutor(max_workers=2) as ex:
 
+    # Process all rooms
+
     list(ex.map(_run_room_batch, by_room.items()))
+
+
+
+
+
+
+# %% ============= FIX DISTANCE LABEL FLOAT TO INT ===============
+
+
+file_paths = glob.glob("../data/synth/output/labels/*.csv")  # adjust path/pattern as needed
+
+dist_col = 5  # index of the column holding distance in meters
+
+for file_path in file_paths:
+    df = pd.read_csv(file_path, header=None)
+    df[dist_col] = (df[dist_col] * 100).round().astype(int)
+    df.to_csv(file_path, header=False, index=False)  # overwrites in place
+
 
 
 # %%

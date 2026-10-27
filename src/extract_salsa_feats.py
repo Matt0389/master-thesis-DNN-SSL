@@ -16,9 +16,9 @@ from src.audio_tools import sph2cart
 # Feature Extraction Constants for SALSA-D-LITE
 # - Yeow et Al. 2025
 # ============================
-FS = 16000
+FS = 24000
 N_FFT = 512 # 512
-HOP_LEN = 200 # 300
+HOP_LEN = 300 # 300
 
 # DOA Frequency Bounds (Check the page *** in Notion for deeper explanation)
 
@@ -71,7 +71,7 @@ def stft_multi_channel(audio: np.ndarray) -> np.ndarray:
     specs = []
     for ch in range(n_ch):
         S = librosa.stft(y=np.asfortranarray(audio[ch]), n_fft=N_FFT, hop_length=HOP_LEN,
-                         win_length=N_FFT, window='hann', pad_mode='reflect')[:, :n_frames]
+                         win_length=N_FFT, window='hann', pad_mode='reflect', center=False)[:, :n_frames]   # DON'T CENTER, messes with causality
         specs.append(S)
     return np.stack(specs, axis=-1)  # (freq, time, channels)
 

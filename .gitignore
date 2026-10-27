@@ -13,3 +13,4 @@ data/synthetic_starss_dataset_500_samples
 data/STARSS23/features
 data/LibriSpeech
 data/synth
+seld_tcn/features
